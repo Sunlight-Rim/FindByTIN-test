@@ -1,13 +1,15 @@
 package tin
 
 import (
-	"io/ioutil"
-	"net/http"
+	"errors"
+	"strings"
 	pb "test-rusprofile/internal/tin/pb"
 
 	"context"
 	"log"
 	"net"
+
+	"github.com/antchfx/htmlquery"
 
 	"google.golang.org/grpc"
 )
@@ -43,17 +45,24 @@ func Start() {
 /// API METHOD (gRPC)
 
 func (s *TinServiceServer) Get(ctx context.Context, in *pb.GetTinRequest) (*pb.GetTinResponse, error) {
-	log.Printf("Recieved: %v", in.GetTin())
-	resp, err := http.Get("https://www.rusprofile.ru/search?query=" + in.GetTin())
+	// Get page HTML from https://www.rusprofile.ru/search?query=number
+	doc, err := htmlquery.LoadURL("https://www.rusprofile.ru/search?query=" + in.GetTin())
 	if err != nil {
 		log.Fatalln(err)
 	}
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		log.Fatalln(err)
+	// Parsing
+	tgrc := htmlquery.FindOne(doc, "//*[@id='clip_kpp']")
+	title := htmlquery.FindOne(doc, "//*[@id='ab-test-wrp']/div[1]/div[1]/h1")
+	fcs := htmlquery.FindOne(doc, "//*[@id='anketa']/div[2]/div[1]/div[3]/span[3]/a/span")
+
+	if tgrc != nil && title != nil && fcs != nil {
+		return &pb.GetTinResponse{
+			Tin:   in.GetTin(),
+			Tgrc:  htmlquery.InnerText(tgrc),
+			Title: strings.TrimSpace(strings.ReplaceAll(htmlquery.InnerText(title), `"`, "'")),
+			FCs:   htmlquery.InnerText(fcs),
+		}, nil
+	} else {
+		return nil, errors.New("parsing was wrong: TIN is correct and you haven't been banned from rusprofile.ru?")
 	}
-	sb := string(body)
-	log.Print(sb)
-	// Getting info from https://www.rusprofile.ru/search?query=3664069397
-	return &pb.GetTinResponse{Tin: "123"}, nil
 }

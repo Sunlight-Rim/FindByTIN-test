@@ -64,7 +64,18 @@ Swagger доступен по адресу `localhost:8080/swaggerui`. JSON-оп
 ```
 git clone https://github.com/Sunlight-Rim/FindByTIN-test.git
 ```
+
+### Вручную
+
 Запустить точку входа
 ```
 go run ./cmd/main.go
+```
+
+### Docker
+
+Собрать и запустить контейнер
+```
+docker build -t findbytin .
+docker run -p 8080:8080 findbytin
 ```
