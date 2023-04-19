@@ -21,19 +21,19 @@ func Start() {
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
-
+	// Dial with gRPC
 	rmux := runtime.NewServeMux()
 	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
 	if err := pb.RegisterTinServiceHandlerFromEndpoint(ctx, rmux, "localhost:12201", opts); err != nil {
-		panic(err)
+		log.Fatalf("Failed to dial with endpoint: %v", err)
 	}
 	// Handlers
 	mux := http.NewServeMux()
 	mux.Handle("/", rmux)
 	mux.Handle("/swaggerui/", http.StripPrefix("/swaggerui/", http.FileServer(http.Dir("./swaggerui"))))
-
-	log.Printf("REST: Server listening at 8080")
+	// Start REST server
+	log.Printf("REST: Server listening at %v\n", restPort)
 	if err := http.ListenAndServe(":"+restPort, mux); err != nil {
-		panic(err)
+		log.Fatalf("Failed to start REST server: %v", err)
 	}
 }

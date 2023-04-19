@@ -2,6 +2,7 @@ package tin
 
 import (
 	"errors"
+	"strconv"
 	"strings"
 	pb "test-rusprofile/internal/tin/pb"
 
@@ -28,13 +29,13 @@ func Start() {
 	grpcServer := grpc.NewServer()
 	tinService := TinServiceServer{}
 	pb.RegisterTinServiceServer(grpcServer, &tinService)
-
+	// Listening
 	lis, err := net.Listen("tcp", ":"+grpcPort)
 	if err != nil {
 		log.Fatalf("Failed to listen: %v", err)
 	}
-	log.Printf("gRPC: TIN service listening at %v", grpcPort)
-
+	// Start gRPC server
+	log.Printf("gRPC: TIN service listening at %v\n", grpcPort)
 	go func() {
 		if err := grpcServer.Serve(lis); err != nil {
 			log.Fatalf("Failed to start gRPC server: %v", err)
@@ -45,10 +46,15 @@ func Start() {
 /// API METHOD (gRPC)
 
 func (s *TinServiceServer) Get(ctx context.Context, in *pb.GetTinRequest) (*pb.GetTinResponse, error) {
+	// TIN incorrect format handling
+	if _, err := strconv.ParseInt(in.GetTin(), 10, 64); err != nil || len(in.GetTin()) != 10 {
+		return nil, errors.New("TIN have incorrect format")
+	}
 	// Get page HTML from https://www.rusprofile.ru/search?query=number
 	doc, err := htmlquery.LoadURL("https://www.rusprofile.ru/search?query=" + in.GetTin())
 	if err != nil {
-		log.Fatalln(err)
+		log.Fatalf("Connect to rusprofile.ru was failed: %v", err)
+		return nil, errors.New("gRPC service can't connect to https://www.rusprofile.ru")
 	}
 	// Parsing
 	tgrc := htmlquery.FindOne(doc, "//*[@id='clip_kpp']")
@@ -63,6 +69,6 @@ func (s *TinServiceServer) Get(ctx context.Context, in *pb.GetTinRequest) (*pb.G
 			FCs:   htmlquery.InnerText(fcs),
 		}, nil
 	} else {
-		return nil, errors.New("parsing was wrong: TIN is correct and you haven't been banned from rusprofile.ru?")
+		return nil, errors.New("parsing was wrong: TIN is correct and you haven't been banned from https://www.rusprofile.ru?")
 	}
 }
