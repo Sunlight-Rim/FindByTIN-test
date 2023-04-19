@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package tin;
+option go_package = ".;tin_pb";
+import "google/api/annotations.proto";
+
+
+service TinService {
+    rpc Get (GetTinRequest) returns (GetTinResponse) {
+        option (google.api.http) = {
+            get: "/tin/{tin}"
+        };
+    };
+}
+
+message GetTinRequest {
+    string tin = 1;
+}
+
+message GetTinResponse {
+    string tin = 1;     // ИНН
+    string tgrc = 2;    // КПП
+    string title = 3;   // Название
+    string FCs = 4;     // ФИО
+}
