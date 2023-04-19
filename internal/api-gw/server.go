@@ -11,6 +11,12 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
+const (
+	restPort = "8080"
+)
+
+/// SERVER DEFINITION
+
 func Start() {
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
@@ -26,8 +32,8 @@ func Start() {
 	mux.Handle("/", rmux)
 	mux.Handle("/swaggerui/", http.StripPrefix("/swaggerui/", http.FileServer(http.Dir("./swaggerui"))))
 
-	log.Printf("REST: Server listening at 8081")
-	if err := http.ListenAndServe(":8081", mux); err != nil {
+	log.Printf("REST: Server listening at 8080")
+	if err := http.ListenAndServe(":"+restPort, mux); err != nil {
 		panic(err)
 	}
 }

@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package tin;
 option go_package = ".;tin_pb";
-import "google/api/annotations.proto";
+import "internal/tin/proto/annotations.proto";
 
 
 service TinService {
