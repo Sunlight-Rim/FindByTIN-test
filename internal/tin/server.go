@@ -61,14 +61,13 @@ func (s *TinServiceServer) Get(ctx context.Context, in *pb.GetTinRequest) (*pb.G
 	title := htmlquery.FindOne(doc, "//*[@id='ab-test-wrp']/div[1]/div[1]/h1")
 	fcs := htmlquery.FindOne(doc, "//*[@id='anketa']/div[2]/div[1]/div[3]/span[3]/a/span")
 
-	if tgrc != nil && title != nil && fcs != nil {
-		return &pb.GetTinResponse{
-			Tin:   in.GetTin(),
-			Tgrc:  htmlquery.InnerText(tgrc),
-			Title: strings.TrimSpace(strings.ReplaceAll(htmlquery.InnerText(title), `"`, "'")),
-			FCs:   htmlquery.InnerText(fcs),
-		}, nil
-	} else {
+	if tgrc == nil || title == nil || fcs == nil {
 		return nil, errors.New("parsing was wrong: TIN is correct and you haven't been banned from https://www.rusprofile.ru?")
 	}
+	return &pb.GetTinResponse{
+		Tin:   in.GetTin(),
+		Tgrc:  htmlquery.InnerText(tgrc),
+		Title: strings.TrimSpace(strings.ReplaceAll(htmlquery.InnerText(title), `"`, "'")),
+		FCs:   htmlquery.InnerText(fcs),
+	}, nil
 }
